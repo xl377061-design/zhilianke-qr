@@ -38,6 +38,17 @@ h1{font-size:21px;margin:8px 0 4px}
 <div class="ops">
   <a id="dl" target="_blank" rel="noopener" href="#">保存二维码</a>
 </div>
+<div id="connBox" style="display:none;text-align:center;padding:14px 6px 4px">
+<div style="font-size:44px">✅</div>
+<div style="font-size:18px;font-weight:700;color:#0a7a48;margin-top:6px">连接成功</div>
+<div style="font-size:14px;color:#607a73;line-height:1.7;margin-top:8px">现在可以回到微信，直接给客服发消息了。<br>本入口永久有效；已为本设备记住连接状态，无需重复扫码。</div>
+</div>
+<div id="skipBox" style="display:none;text-align:center;padding:14px 6px 4px">
+<div style="font-size:40px">👌</div>
+<div style="font-size:18px;font-weight:700;color:#0a7a48;margin-top:6px">您已连接过，无需重复扫码</div>
+<div style="font-size:14px;color:#607a73;line-height:1.7;margin-top:8px">已为本设备记住连接状态（24 小时）。<br>若确认连接已失效，可点下方重新连接。</div>
+<a class="again" href="#" style="display:inline-block;margin-top:12px;font-size:13px;color:#168567;text-decoration:underline">连接已失效？点此重新连接</a>
+</div>
 <div id="st">正在获取当前有效码…</div>
 <div id="err"></div>
 </main>
@@ -2344,9 +2355,20 @@ var qrcode = function() {
 <script>
 const SRC_BASE="https://re395.com/api/fixed-entry.json";
 const OP=new URLSearchParams(location.search).get("op")||"";
-const NONCE=(sessionStorage.getItem("zn")||(()=>{const n=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem("zn",n);return n})());
+const MARKER="zl_conn_"+(OP||"");
 const st=document.getElementById("st"),err=document.getElementById("err");
 const srv=document.getElementById("srv"),cvimg=document.getElementById("qr");
+const stepsEl=document.querySelector(".steps"),qrbox=document.getElementById("qrbox"),opsEl=document.querySelector(".ops");
+const connBox=document.getElementById("connBox"),skipBox=document.getElementById("skipBox");
+let refreshInt=null,pollInt=null,lastId=null;
+function markerVal(){try{const v=Number(localStorage.getItem(MARKER)||0);return v&&Date.now()<v?v:0}catch(e){return 0}}
+function setMarker(){try{localStorage.setItem(MARKER,String(Date.now()))}catch(e){}}
+function clearMarker(){try{localStorage.removeItem(MARKER)}catch(e){}}
+function enterMode(mode){
+  if(mode==="normal"){stepsEl.style.display="";qrbox.style.display="block";opsEl.style.display="";connBox.style.display="none";skipBox.style.display="none";st.style.display="";}
+  else if(mode==="connected"){stepsEl.style.display="none";qrbox.style.display="none";opsEl.style.display="none";err.style.display="none";st.style.display="none";connBox.style.display="block";skipBox.style.display="none";}
+  else{stepsEl.style.display="none";qrbox.style.display="none";opsEl.style.display="none";err.style.display="none";st.style.display="none";connBox.style.display="none";skipBox.style.display="block";}
+}
 function drawQr(text){
   const qr=qrcode(0,"M"); qr.addData(text); qr.make();
   const n=qr.getModuleCount(), cell=10, pad=4, size=(n+pad*2)*cell;
@@ -2355,28 +2377,54 @@ function drawQr(text){
   for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c))g.fillRect((c+pad)*cell,(r+pad)*cell,cell,cell);
   return cv.toDataURL("image/png");
 }
-srv.onerror=()=>{srv.style.display="none";cvimg.style.display="block"};
-srv.onload=()=>{srv.style.display="block";cvimg.style.display="none"};
+srv.onerror=function(){srv.style.display="none";cvimg.style.display="block"};
+srv.onload=function(){srv.style.display="block";cvimg.style.display="none"};
 async function refresh(){
   try{
     const r=await fetch(SRC_BASE+"?nonce="+encodeURIComponent(NONCE)+(OP?"&op="+encodeURIComponent(OP):""),{cache:"no-store"});
     if(!r.ok) throw new Error("http "+r.status);
     const j=await r.json();
     if(!j.url) throw new Error(j.message||"no-url");
+    lastId=j.id;
     const data=drawQr(j.url);
     const pngUrl="https://re395.com/go/clawbot/session/"+j.id+".png?t="+Date.now();
     document.getElementById("dl").href=pngUrl;
-    srv.src=pngUrl;
-    cvimg.src=data;
-    document.getElementById("qrbox").style.display="block";
+    srv.src=pngUrl; cvimg.src=data;
+    qrbox.style.display="block";
     err.style.display="none";
-    st.textContent="已获取当前有效码"+(j.opName?" · 接入后进入 "+j.opName+" 的客服界面":"")+" · 接入成功或满 5 分钟自动换新";
+    st.textContent="已获取当前有效码"+(j.opName?" · 接入后进入 "+j.opName+" 的客服界面":"")+" · 每 30 秒检查换新";
+    if(!pollInt) pollInt=setInterval(function(){if(lastId)pollStatus(lastId)},5000);
   }catch(e){
     err.style.display="block"; err.textContent="获取失败，自动重试中: "+e.message;
     st.textContent="本页地址永久不变，稍后自动重试";
   }
 }
-refresh(); setInterval(refresh,30000);
+async function pollStatus(id){
+  try{
+    const r=await fetch("https://re395.com/go/clawbot/session/"+id+"/status",{cache:"no-store"});
+    const j=await r.json();
+    if(j.status==="connected"){
+      setMarker();
+      if(refreshInt){clearInterval(refreshInt);refreshInt=null}
+      if(pollInt){clearInterval(pollInt);pollInt=null}
+      enterMode("connected");
+    }else if(j.status==="failed"||j.status==="expired"){
+      st.textContent=(j.message||"当前码已失效")+" · 正在自动换新…";
+    }
+  }catch(e){}
+}
+function startFlow(){
+  if(refreshInt){clearInterval(refreshInt);refreshInt=null}
+  if(pollInt){clearInterval(pollInt);pollInt=null}
+  lastId=null;
+  enterMode("normal");
+  refresh();
+  refreshInt=setInterval(refresh,30000);
+}
+Array.prototype.forEach.call(document.querySelectorAll(".again"),function(a){
+  a.onclick=function(e){e.preventDefault();clearMarker();startFlow()};
+});
+if(markerVal()){enterMode("skip")}else{startFlow()}
 </script>
 </body>
 </html>
