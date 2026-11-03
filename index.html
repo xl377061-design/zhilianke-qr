@@ -2390,12 +2390,25 @@ async function refresh(){
     const data=drawQr(j.url);
     const pngUrl="https://re395.com/go/clawbot/session/"+j.id+".png?t="+Date.now();
     document.getElementById("dl").href=pngUrl;
+    try{localStorage.setItem("zl_last_"+(OP||""),JSON.stringify({url:j.url,at:Date.now()}))}catch(e){}
     srv.src=pngUrl; cvimg.src=data;
     qrbox.style.display="block";
     err.style.display="none";
     st.textContent="已获取当前有效码"+(j.opName?" · 接入后进入 "+j.opName+" 的客服界面":"")+" · 每 30 秒检查换新";
     if(!pollInt) pollInt=setInterval(function(){if(lastId)pollStatus(lastId)},5000);
   }catch(e){
+    let cached=null;
+    try{const raw=localStorage.getItem("zl_last_"+(OP||""));if(raw){const c=JSON.parse(raw);if(Date.now()-c.at<30*60*1000&&c.url)cached=c}}catch(err2){}
+    if(cached){
+      try{
+        const data=drawQr(cached.url);
+        document.getElementById("dl").href=data;
+        srv.src=data; cvimg.src=data;
+        qrbox.style.display="block"; err.style.display="none";
+        st.textContent="离线缓存展示（30分钟内有效）· 网络恢复后自动刷新";
+        return;
+      }catch(err3){}
+    }
     err.style.display="block"; err.textContent="获取失败，自动重试中: "+e.message;
     st.textContent="本页地址永久不变，稍后自动重试";
   }
