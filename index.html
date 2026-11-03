@@ -2356,6 +2356,7 @@ var qrcode = function() {
 const SRC_BASE="https://re395.com/api/fixed-entry.json";
 const OP=new URLSearchParams(location.search).get("op")||"";
 const MARKER="zl_conn_"+(OP||"");
+const NONCE=(sessionStorage.getItem("zn")||(()=>{const n=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem("zn",n);return n})());
 const st=document.getElementById("st"),err=document.getElementById("err");
 const srv=document.getElementById("srv"),cvimg=document.getElementById("qr");
 const stepsEl=document.querySelector(".steps"),qrbox=document.getElementById("qrbox"),opsEl=document.querySelector(".ops");
