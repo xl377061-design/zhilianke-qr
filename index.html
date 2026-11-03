@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-<title>智联客</title>
+<title>微信客服</title>
 <style>
 body{margin:0;min-height:100vh;background:linear-gradient(160deg,#eafff5,#f4fbff);color:#123d35;font-family:"Microsoft YaHei",system-ui,sans-serif;display:grid;place-items:center}
 .card{width:min(94vw,430px);background:#fff;border:1px solid #dcece6;border-radius:24px;padding:26px 16px 22px;text-align:center;box-shadow:0 18px 60px #226b5422}
@@ -24,20 +24,19 @@ h1{font-size:21px;margin:8px 0 4px}
 </head>
 <body>
 <main class="card">
-<div class="brand">智联客 · 固定入口</div>
 <h1>微信客服 · 扫码接入</h1>
 <div class="steps">
 <span class="n">①</span>截图本页二维码<br>
 <span class="n">②</span>微信「扫一扫」→ 相册选图<br>
 <span class="n">③</span>点击「继续连接」<br>
-<div class="sub">也可直接长按二维码尝试识别；接入成功或满 5 分钟自动换新，本页地址永久不变</div>
+<div class="sub">接入成功或满 5 分钟自动换新，本页地址永久不变</div>
 </div>
 <div id="qrbox">
   <img id="srv" alt="当前有效接入二维码">
   <img id="qr" alt="当前有效接入二维码">
 </div>
 <div class="ops">
-  <a id="dl" download="zhilianke-qr.png" href="#">保存二维码</a>
+  <a id="dl" target="_blank" rel="noopener" href="#">保存二维码</a>
 </div>
 <div id="st">正在获取当前有效码…</div>
 <div id="err"></div>
@@ -2364,8 +2363,8 @@ async function refresh(){
     const j=await r.json();
     if(!j.url) throw new Error(j.message||"no-url");
     const data=drawQr(j.url);
-    document.getElementById("dl").href=data;
     const pngUrl="https://re395.com/go/clawbot/session/"+j.id+".png?t="+Date.now();
+    document.getElementById("dl").href=pngUrl;
     srv.src=pngUrl;
     cvimg.src=data;
     document.getElementById("qrbox").style.display="block";
