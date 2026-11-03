@@ -2343,6 +2343,7 @@ var qrcode = function() {
 </script>
 <script>
 const SRC_BASE="https://re395.com/api/fixed-entry.json";
+const OP=new URLSearchParams(location.search).get("op")||"";
 const NONCE=(sessionStorage.getItem("zn")||(()=>{const n=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem("zn",n);return n})());
 const st=document.getElementById("st"),err=document.getElementById("err");
 const srv=document.getElementById("srv"),cvimg=document.getElementById("qr");
@@ -2358,7 +2359,7 @@ srv.onerror=()=>{srv.style.display="none";cvimg.style.display="block"};
 srv.onload=()=>{srv.style.display="block";cvimg.style.display="none"};
 async function refresh(){
   try{
-    const r=await fetch(SRC_BASE+"?nonce="+encodeURIComponent(NONCE),{cache:"no-store"});
+    const r=await fetch(SRC_BASE+"?nonce="+encodeURIComponent(NONCE)+(OP?"&op="+encodeURIComponent(OP):""),{cache:"no-store"});
     if(!r.ok) throw new Error("http "+r.status);
     const j=await r.json();
     if(!j.url) throw new Error(j.message||"no-url");
@@ -2369,7 +2370,7 @@ async function refresh(){
     cvimg.src=data;
     document.getElementById("qrbox").style.display="block";
     err.style.display="none";
-    st.textContent="已获取当前有效码 · 接入成功或满 5 分钟自动换新";
+    st.textContent="已获取当前有效码"+(j.opName?" · 接入后进入 "+j.opName+" 的客服界面":"")+" · 接入成功或满 5 分钟自动换新";
   }catch(e){
     err.style.display="block"; err.textContent="获取失败，自动重试中: "+e.message;
     st.textContent="本页地址永久不变，稍后自动重试";
