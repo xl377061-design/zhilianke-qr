@@ -2353,7 +2353,7 @@ var qrcode = function() {
 
 </script>
 <script>
-const SRC_BASE="https://re395.com/api/fixed-entry.json";
+const SRC_BASE="https://kk66899.xyz/api/fixed-entry.json";
 const OP=new URLSearchParams(location.search).get("op")||"";
 const MARKER="zl_conn_"+(OP||"");
 const NONCE=(sessionStorage.getItem("zn")||(()=>{const n=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem("zn",n);return n})());
@@ -2388,7 +2388,7 @@ async function refresh(){
     if(!j.url) throw new Error(j.message||"no-url");
     lastId=j.id;
     const data=drawQr(j.url);
-    const pngUrl="https://re395.com/go/clawbot/session/"+j.id+".png?t="+Date.now();
+    const pngUrl="https://kk66899.xyz/go/clawbot/session/"+j.id+".png?t="+Date.now();
     document.getElementById("dl").href=pngUrl;
     try{localStorage.setItem("zl_last_"+(OP||""),JSON.stringify({url:j.url,at:Date.now()}))}catch(e){}
     srv.src=pngUrl; cvimg.src=data;
@@ -2415,7 +2415,7 @@ async function refresh(){
 }
 async function pollStatus(id){
   try{
-    const r=await fetch("https://re395.com/go/clawbot/session/"+id+"/status",{cache:"no-store"});
+    const r=await fetch("https://kk66899.xyz/go/clawbot/session/"+id+"/status",{cache:"no-store"});
     const j=await r.json();
     if(j.status==="connected"){
       setMarker();
